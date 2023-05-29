@@ -7,6 +7,9 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.webdriver import WebDriver
 from webdriver_manager.firefox import GeckoDriverManager
 
+from selenium.webdriver.firefox.options import Options 
+import time
+
 from courier_scraper_utilities import scrape_story
 
 
@@ -34,48 +37,76 @@ number_of_stories_seen = 0  # And without further ado, the variable in question
 # This is a CSS selector. # See https://saucelabs.com/resources/blog/selenium-tips-css-selectors for more info
 # Each story element in the feed is contained in a div with the class "item"
 # We can select it with this CSS selector syntax
-story_container_css_selector = "div.item" 
+story_container_css_selector = "div.item"
+
+feed_container_class = "recent-posts"  # This is the HTML class of the div containing the story feed 
+
+more_button_css_selector = "load-more-button"
 
 story_url_css_selector = "a.item-title" # Another CSS selector that we'll use to find story URLs 
 
 all_stories_metadata = []
 
-# I dislike the "while True" syntax, but it's standard in Python
-# See https://peps.python.org/pep-0315/ and https://twitter.com/raymondh/status/1528772337306419200
-# We'll break the loop when we reach our exit condition
-while True:
-    
-    # Capture all of the story container divs in our feed
-    # Note that we're using "find_elements" here, not "find_element" like we used above. 
-    # find_elements will return all of the elements matching our selection criterion. find_element only returns the first
-    story_container_elements = feed_container_element.find_elements(By.CSS_SELECTOR, story_container_css_selector)  
-    
-    # If we've seen all the stories in the feed, we're done. Break the loop
-    number_of_stories_in_feed = len(story_container_elements)
-    if number_of_stories_in_feed == number_of_stories_seen:
-        print(f"No more stories in feed. Processed {number_of_stories_seen} stories total")
-        break 
-    
-    print(f"{number_of_stories_in_feed} stories in feed")
-    # Stories load 8 at a time. We should always scrape the most recently loaded 8 stories. 
-    for story_container_element in story_container_elements[-8:]:
-        # Find the "a" tag containing the story link
-        # Then extract its "href" attribute, AKA the story's URL
-        story_url = story_container_element.find_element(By.CSS_SELECTOR, story_url_css_selector).get_attribute("href")
+##### Load landing page for individual Courier Site
+
+# the interface for turning on headless mode 
+options = Options() 
+options.add_argument("-headless") 
+
+driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)  # Ensure we have the latest GeckoDriver (used to run Firefox)
+
+# landing_page_url = "https://cardinalpine.com/"  # The landing page (hopefully) contains a dynamic list of all the stories we need to scrape from that outlet 
+# driver.get(landing_page_url)  # Navigate to the landing page  
+
+urls = ["https://cardinalpine.com/"]#, "https://vadogwood.com/", "https://keystonenewsroom.com/", "https://upnorthnewswi.com/", "https://gandernewsroom.com/", "https://theamericanonews.com/floricua/", "https://coppercourier.com/"]
+# Iowa Starting Line 2 doesn't match overall design
+
+for url in urls:
+    driver.get(url)
+    number_of_stories_seen = 0
+    # I dislike the "while True" syntax, but it's standard in Python
+    # See https://peps.python.org/pep-0315/ and https://twitter.com/raymondh/status/1528772337306419200
+    # We'll break the loop when we reach our exit condition
+    while True:
+        #### Find the "recent stories" feed
+        feed_container_element = driver.find_element(By.CLASS_NAME, feed_container_class)  # We'll capture that div in a python variable for easy access
         
-        # Do the actual scraping
-        story_metadata = scrape_story(driver, story_url)  
+        # Capture all of the story container divs in our feed
+        # Note that we're using "find_elements" here, not "find_element" like we used above. 
+        # find_elements will return all of the elements matching our selection criterion. find_element only returns the first
+        story_container_elements = feed_container_element.find_elements(By.CSS_SELECTOR, story_container_css_selector)  
         
-        # Store the current story's metadata in our larger data structure
-        all_stories_metadata.append(story_metadata) 
+        # If we've seen all the stories in the feed, we're done. Break the loop
+        number_of_stories_in_feed = len(story_container_elements)
+        # print(number_of_stories_in_feed)
+        if number_of_stories_in_feed == number_of_stories_seen:
+            print(f"No more stories in feed. Processed {number_of_stories_seen} stories total")
+            break 
         
-        # increment our stories seen counter
-        number_of_stories_seen += 1
-    
-    # After each set of 8 stories, we'll need to load more. 
-    # Remove the break below and find a way to click on the "load more stories" link
-    # You may need to make sure the link is visible before you click it (scroll to it)
-    break
+        print(f"{number_of_stories_in_feed} stories in feed")
+        # Stories load 8 at a time. We should always scrape the most recently loaded 8 stories. 
+        for story_container_element in story_container_elements[-8:]:
+            # Find the "a" tag containing the story link
+            # Then extract its "href" attribute, AKA the story's URL
+            story_url = story_container_element.find_element(By.CSS_SELECTOR, story_url_css_selector).get_attribute("href")
+            
+            # Do the actual scraping
+            story_metadata = scrape_story(driver, story_url)  
+            
+            # Store the current story's metadata in our larger data structure
+            all_stories_metadata.append(story_metadata) 
+            
+            # increment our stories seen counter
+            number_of_stories_seen += 1
+        
+        # After each set of 8 stories, we'll need to load more. 
+        # Remove the break below and find a way to click on the "load more stories" link
+        # You may need to make sure the link is visible before you click it (scroll to it)
+        # break
+        more_button_element = driver.find_element(By.CLASS_NAME, more_button_css_selector)
+        more_button_element.click()
+        time.sleep(2)
+    print("Total stories scraped", number_of_stories_seen)
 
 
 

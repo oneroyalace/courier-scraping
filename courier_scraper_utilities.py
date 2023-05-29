@@ -7,7 +7,7 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.webdriver import WebDriver
 from webdriver_manager.firefox import GeckoDriverManager
 
-
+import requests
 
 ## constant variables used in `scrape_story` below
 story_title_selector = "h1.entry-title"
@@ -72,3 +72,13 @@ def close_current_tab(driver: WebDriver) -> None:
 
 
 
+
+def make_request(nonce, page, per_page, url):
+    querystring = {"":""}
+    payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"action\"\r\n\r\nload_more_posts\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"nonce\"\r\n\r\n{nonce}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"per_page\"\r\n\r\n{per_page}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"page\"\r\n\r\n{page}\r\n-----011000010111000001101001--\r\n"
+    headers = {
+        "cookie": "wordpress_google_apps_login=8c2e542fe10764cc0fda9d90052b1f26",
+        "Content-Type": "multipart/form-data; boundary=---011000010111000001101001",
+        'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
+    }
+    return requests.request("POST", url, data=payload, headers=headers, params=querystring)
