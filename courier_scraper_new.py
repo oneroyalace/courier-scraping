@@ -8,10 +8,21 @@ from selenium.webdriver.firefox.options import Options
 
 import re
 import time
+import psycopg2
 
 from courier_scraper_utilities import scrape_story, make_request
 
 url = "https://cardinalpine.com/wp-admin/admin-ajax.php"
+
+save_to_database = False
+
+if save_to_database:
+    conn = psycopg2.connect(database=os.environ.get('COURIER_DB_NAME'),
+                            host=os.environ.get('COURIER_DB_HOST'),
+                            user=os.environ.get('COURIER_DB_USER'),
+                            password=os.environ.get('COURIER_DB_PASSWORD'),
+                            port=os.environ.get('COURIER_DB_PORT'))
+    cursor = conn.cursor()
 
 # nonce changes every day at midnight PST!
 nonce = "45208465a2"
