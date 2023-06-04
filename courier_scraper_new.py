@@ -57,7 +57,6 @@ while True:
 
             if stories_scraped % 50 == 0:
                 print("RESETING DRIVER")
-                print(f"Stories scraped: {stories_scraped}")
                 driver.quit()
                 driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
 
@@ -66,6 +65,5 @@ while True:
 
     page += 1
     print("REQUESTING MORE STORY URLS")
-    print(f"Stories scraped: {stories_scraped}")
     response = make_request(nonce, page, per_page, url)
     story_urls = re.findall(r'(?:<a class=\\\"item-title\\\" href=\\\")(\S+)(?:\\\/\\\">)', response.text)

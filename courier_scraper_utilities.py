@@ -3,6 +3,7 @@ from typing import Any, Mapping
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.webdriver import WebDriver
 from webdriver_manager.firefox import GeckoDriverManager
@@ -26,11 +27,19 @@ def scrape_story(driver: WebDriver, url: str) -> Mapping[str, Any]:
     print("scraping story", url)
     open_url_in_new_tab(driver, url)  # Open the story in a new tab
     
-    story_title = driver.find_element(By.CSS_SELECTOR, story_title_selector).text  # Since we want raw metadata, we're accessing the elements' text attributes
-    story_author = driver.find_element(By.CSS_SELECTOR, story_author_selector).text
-    story_section = driver.find_element(By.CSS_SELECTOR, story_section_selector).text
-    story_text = "" #...
+    # story_title = driver.find_element(By.CSS_SELECTOR, story_title_selector).text  # Since we want raw metadata, we're accessing the elements' text attributes
+    # story_author = driver.find_element(By.CSS_SELECTOR, story_author_selector).text
+    # story_section = driver.find_element(By.CSS_SELECTOR, story_section_selector).text
+    # story_text = "" #...
+
+    story_title = WebDriverWait(driver, timeout=5).until(lambda d: d.find_element(By.CSS_SELECTOR, story_title_selector)).text
+    story_author = WebDriverWait(driver, timeout=5).until(lambda d: d.find_element(By.CSS_SELECTOR, story_author_selector)).text
+    story_section = WebDriverWait(driver, timeout=5).until(lambda d: d.find_element(By.CSS_SELECTOR, story_section_selector)).text
     
+# driver.navigate("file:///race_condition.html")
+# el = WebDriverWait(driver, timeout=3).until(lambda d: d.find_element(By.TAG_NAME,"p"))
+# assert el.text == "Hello from JavaScript!"
+
     # ...
     # capture additional metadata
     # ...
