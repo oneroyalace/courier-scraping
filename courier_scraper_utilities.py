@@ -1,4 +1,4 @@
-from typing import Any, Mapping
+from typing import Any, Mapping, List
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -25,7 +25,8 @@ Returns:
 """
 def scrape_story(driver: WebDriver, url: str) -> Mapping[str, Any]:
     print("scraping story", url)
-    open_url_in_new_tab(driver, url)  # Open the story in a new tab
+    # open_url_in_new_tab(driver, url)  # Open the story in a new tab
+    driver.get(url)
     
     # story_title = driver.find_element(By.CSS_SELECTOR, story_title_selector).text  # Since we want raw metadata, we're accessing the elements' text attributes
     # story_author = driver.find_element(By.CSS_SELECTOR, story_author_selector).text
@@ -50,7 +51,7 @@ def scrape_story(driver: WebDriver, url: str) -> Mapping[str, Any]:
         "url": url,
         #... additional metadata
     }
-    close_current_tab(driver)  # close the story tab and return to the landing page tab
+    # close_current_tab(driver)  # close the story tab and return to the landing page tab
     return story_metadata
 
 
@@ -80,9 +81,16 @@ def close_current_tab(driver: WebDriver) -> None:
     driver.switch_to.window(main_tab_handle)
 
 
-
-
-def make_request(nonce, page, per_page, url):
+""" Makes a request asking for story urls
+Args:
+    nonce: Key needed to make request
+    page: Number of story urls
+    per_page: Which chunk of page story needed
+    url: url of newsroom homepage
+Returns:
+    Array of length page with story urls
+"""
+def make_request(nonce: str, page: int, per_page: int, url: str) -> List[str]:
     querystring = {"":""}
     payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"action\"\r\n\r\nload_more_posts\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"nonce\"\r\n\r\n{nonce}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"per_page\"\r\n\r\n{per_page}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"page\"\r\n\r\n{page}\r\n-----011000010111000001101001--\r\n"
     headers = {
