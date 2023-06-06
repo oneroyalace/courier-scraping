@@ -27,7 +27,8 @@ save_to_database = False
 #   nonce is like a key and changes every day at midnight PST
 #       Thankfully, it is stored in script tags on the website so we can obtain it automatically
 #       and it is also the same accross all courier sites
-courier_urls = ["https://cardinalpine.com", "https://gandernewsroom.com", "https://upnorthnewswi.com"]
+courier_urls = ["https://cardinalpine.com", "https://gandernewsroom.com", "https://upnorthnewswi.com", "https://coppercourier.com", "https://vadogwood.com", "https://keystonenewsroom.com", "https://theamericanonews.com/floricua"]
+# Iowa Starting Line, https://iowastartingline.com/, doesn't follow the same design
 page = 1
 per_page = 300
 driver.get(courier_urls[0])
@@ -46,35 +47,42 @@ if save_to_database:
 # Creating txt file for urls of articles that didn't scrape successfully
 log = open("courierscraper.log", "w")
 
-for url in courier_urls:
+for courier_url in courier_urls:
     # Getting the first per_page stories
-    response = make_request(nonce, page, per_page, url + "/wp-admin/admin-ajax.php")
+    response = make_request(nonce, page, per_page, courier_url + "/wp-admin/admin-ajax.php")
     story_urls = re.findall(r'(?:<a class=\\\"item-title\\\" href=\\\")(\S+)(?:\\\/\\\">)', response.text)
     stories_total = int(re.search(r'(?:\"total\"\:)([0-9]+)(?:,\")', response.text).group(1))
     stories_scraped = 0
 
-    log.write(f"Start scraping {url}. Stories expected: {stories_total}")
+    log.write(f"Start scraping {url}. Stories expected: {stories_total}\n")
     print('**' * 20)
     print(f'Started. Stories expected: {stories_total}')
     print('**' * 20)
 
     while True:
         if len(story_urls) == 0:
-            log.write(f"Finished scraping {url}. Stories scraped: {stories_scraped}")
+            log.write(f"Finished scraping {courier_url}. Stories scraped: {stories_scraped}/{stories_total}")
             print('**' * 20)
-            print(f'Finished. Stories scraped: {stories_scraped}. Stories expected: {stories_total}')
+            print(f'Finished. Stories scraped: {stories_scraped}/{stories_total}')
             print('**' * 20)
             break
         else:
-            for story in story_urls:
-                url = re.sub(r"\\", "", story)
+            for story_url in story_urls:
+                clean_url = re.sub(r"\\", "", story_url)
 
                 try:
-                    story_metadata = scrape_story(driver, url)
+                    story_metadata = scrape_story(driver, clean_url)
+                    stories_scraped += 1
                 except TimeoutException:
-                    print("Scrape failed for url ", url)
-                    log.write(f"Story {stories_scraped}: {url}\n")
-                stories_scraped += 1
+                    # Sometimes the stories won't load properly. Then we can try to scrape for a second time
+                    # If that still fails, the story page likely doesn't follow the normal format and we'll log it
+                    try:
+                        print("Scrape failed, trying again")
+                        story_metadata = scrape_story(driver, clean_url)
+                        stories_scraped += 1
+                    except TimeoutException:
+                        print("Scrape failed again, moving on to next story")
+                        log.write(f"Scrape failed for {clean_url}\n")
 
                 # Quitting and re-initializing the driver to recover cache space
                 if stories_scraped % 50 == 0:
@@ -83,7 +91,7 @@ for url in courier_urls:
                     driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
 
                 if stories_scraped % 20 == 0:
-                    print(f"Stories scraped: {stories_scraped}")
+                    print(f"Stories scraped: {stories_scraped}/{stories_total}")
 
         page += 1
         print("Requesting more story urls")

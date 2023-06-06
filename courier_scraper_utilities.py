@@ -24,7 +24,7 @@ Returns:
     I imagine we might want the full text of the story, etc, etc
 """
 def scrape_story(driver: WebDriver, url: str) -> Mapping[str, Any]:
-    print("scraping story", url)
+    print("Scraping story", url)
     # open_url_in_new_tab(driver, url)  # Open the story in a new tab
     driver.get(url)
     
@@ -33,9 +33,9 @@ def scrape_story(driver: WebDriver, url: str) -> Mapping[str, Any]:
     # story_section = driver.find_element(By.CSS_SELECTOR, story_section_selector).text
     # story_text = "" #...
 
-    story_title = WebDriverWait(driver, timeout=5).until(lambda d: d.find_element(By.CSS_SELECTOR, story_title_selector)).text
-    story_author = WebDriverWait(driver, timeout=5).until(lambda d: d.find_element(By.CSS_SELECTOR, story_author_selector)).text
-    story_section = WebDriverWait(driver, timeout=5).until(lambda d: d.find_element(By.CSS_SELECTOR, story_section_selector)).text
+    story_title = WebDriverWait(driver, timeout=15).until(lambda d: d.find_element(By.CSS_SELECTOR, story_title_selector)).text
+    story_author = WebDriverWait(driver, timeout=15).until(lambda d: d.find_element(By.CSS_SELECTOR, story_author_selector)).text
+    story_section = WebDriverWait(driver, timeout=15).until(lambda d: d.find_element(By.CSS_SELECTOR, story_section_selector)).text
     
 # driver.navigate("file:///race_condition.html")
 # el = WebDriverWait(driver, timeout=3).until(lambda d: d.find_element(By.TAG_NAME,"p"))
@@ -53,6 +53,26 @@ def scrape_story(driver: WebDriver, url: str) -> Mapping[str, Any]:
     }
     # close_current_tab(driver)  # close the story tab and return to the landing page tab
     return story_metadata
+
+
+""" Makes a request for story urls
+Args:
+    nonce: Key needed to make request
+    page: Number of story urls
+    per_page: Which chunk of page story needed
+    url: url of newsroom homepage
+Returns:
+    Array of length page with story urls
+"""
+def make_request(nonce: str, page: int, per_page: int, url: str) -> List[str]:
+    querystring = {"":""}
+    payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"action\"\r\n\r\nload_more_posts\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"nonce\"\r\n\r\n{nonce}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"per_page\"\r\n\r\n{per_page}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"page\"\r\n\r\n{page}\r\n-----011000010111000001101001--\r\n"
+    headers = {
+        "cookie": "wordpress_google_apps_login=8c2e542fe10764cc0fda9d90052b1f26",
+        "Content-Type": "multipart/form-data; boundary=---011000010111000001101001",
+        'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
+    }
+    return requests.request("POST", url, data=payload, headers=headers, params=querystring)
 
 
 """ Opens a new selenium driver  tab and navigates to the url provided
@@ -79,23 +99,3 @@ def close_current_tab(driver: WebDriver) -> None:
     driver.close()
     main_tab_handle = driver.window_handles[0]
     driver.switch_to.window(main_tab_handle)
-
-
-""" Makes a request asking for story urls
-Args:
-    nonce: Key needed to make request
-    page: Number of story urls
-    per_page: Which chunk of page story needed
-    url: url of newsroom homepage
-Returns:
-    Array of length page with story urls
-"""
-def make_request(nonce: str, page: int, per_page: int, url: str) -> List[str]:
-    querystring = {"":""}
-    payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"action\"\r\n\r\nload_more_posts\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"nonce\"\r\n\r\n{nonce}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"per_page\"\r\n\r\n{per_page}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"page\"\r\n\r\n{page}\r\n-----011000010111000001101001--\r\n"
-    headers = {
-        "cookie": "wordpress_google_apps_login=8c2e542fe10764cc0fda9d90052b1f26",
-        "Content-Type": "multipart/form-data; boundary=---011000010111000001101001",
-        'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
-    }
-    return requests.request("POST", url, data=payload, headers=headers, params=querystring)

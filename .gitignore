@@ -2,4 +2,4 @@
 __pycache__/
 geckodriver.log
 .env
-courierscraper.log
+failedscrapes.txt
