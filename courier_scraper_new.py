@@ -54,14 +54,14 @@ for courier_url in courier_urls:
     stories_total = int(re.search(r'(?:\"total\"\:)([0-9]+)(?:,\")', response.text).group(1))
     stories_scraped = 0
 
-    log.write(f"Start scraping {url}. Stories expected: {stories_total}\n")
+    log.write(f"Start scraping {courier_url}. Stories expected: {stories_total}\n")
     print('**' * 20)
     print(f'Started. Stories expected: {stories_total}')
     print('**' * 20)
 
     while True:
         if len(story_urls) == 0:
-            log.write(f"Finished scraping {courier_url}. Stories scraped: {stories_scraped}/{stories_total}")
+            log.write(f"Finished scraping {courier_url}. Stories scraped: {stories_scraped}/{stories_total}\n")
             print('**' * 20)
             print(f'Finished. Stories scraped: {stories_scraped}/{stories_total}')
             print('**' * 20)
@@ -95,7 +95,7 @@ for courier_url in courier_urls:
 
         page += 1
         print("Requesting more story urls")
-        response = make_request(nonce, page, per_page, url + "/wp-admin/admin-ajax.php")
+        response = make_request(nonce, page, per_page, courier_url + "/wp-admin/admin-ajax.php")
         story_urls = re.findall(r'(?:<a class=\\\"item-title\\\" href=\\\")(\S+)(?:\\\/\\\">)', response.text)
 
 driver.quit()
